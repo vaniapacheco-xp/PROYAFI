@@ -105,6 +105,7 @@ small.ayuda{display:block;color:#64748b;margin-top:4px;}
 <div class="bloqueo">Completa la Fase 2 (cargar el JSON del compañero) para desbloquear esta fase.</div>
 <h3>Fase 3 · Validación cruzada</h3>
 <p>Actúa como auditor externo del trabajo que cargaste. Identifica errores reales (no opiniones), propón mejoras viables y emite una evaluación crítica fundamentada.</p>
+<div id="trabajoCompanero"></div>
 <label class="campo">Nombre del compañero evaluado</label>
 <input id="v0" placeholder="Nombre">
 <label class="campo">Errores identificados (con evidencia, no opiniones)</label>
@@ -295,19 +296,55 @@ a.click();
 actualizarStepper();
 }
 
+// Claves de CONTROL que nunca deben sobrescribir el progreso propio del alumno
+const CLAVES_PROTEGIDAS = ["rol","faseActual","descargado","companeroCargado","aprobado"];
+
 function importarJSON(){
 let file = document.getElementById("fileInput").files[0];
 if(!file){ alert("Selecciona un archivo"); return; }
 let reader = new FileReader();
 reader.onload = e=>{
-let data = JSON.parse(e.target.result);
-for(let k in data){ localStorage.setItem(k, data[k]); }
+let data;
+try{
+data = JSON.parse(e.target.result);
+} catch(err){
+alert("El archivo no es un JSON válido. Pide a tu compañero que te lo vuelva a compartir (debe ser el archivo descargado desde esta misma app).");
+return;
+}
+if(!data || typeof data!=="object" || !data.rol){
+alert("Este archivo no parece ser un JSON de esta actividad (no tiene información de rol). Verifica que sea el archivo correcto.");
+return;
+}
+// Guardamos el trabajo del compañero aparte, SIN tocar tu propio progreso (rol, fase, descargas, etc.)
+localStorage.setItem("companeroData", JSON.stringify(data));
 localStorage.setItem("companeroCargado","true");
+mostrarTrabajoCompanero(data);
 alert("Archivo del compañero cargado correctamente");
 document.getElementById("accionesFase2").classList.remove("hidden");
 actualizarStepper();
 };
 reader.readAsText(file);
+}
+
+function mostrarTrabajoCompanero(data){
+let cont = document.getElementById("trabajoCompanero");
+if(!cont) return;
+if(!data){
+let guardado = localStorage.getItem("companeroData");
+if(!guardado){ cont.innerHTML=""; return; }
+data = JSON.parse(guardado);
+}
+let conf = ROLES[data.rol];
+let html = '<div class="card" style="background:#f8fafc;"><h4>Trabajo recibido de: '+(data.rol?ROLES[data.rol]?.label||data.rol:"desconocido")+'</h4>';
+if(conf){
+conf.fields.forEach(f=>{
+html += '<p><b>'+f.label+':</b><br>'+ (data[f.id] ? data[f.id] : '<i>(sin responder)</i>') +'</p>';
+});
+} else {
+html += '<p><i>No se pudo identificar el rol del compañero en este archivo.</i></p>';
+}
+html += '</div>';
+cont.innerHTML = html;
 }
 
 // ---------- FASE 4 (OMAR) ----------
@@ -399,6 +436,7 @@ document.getElementById("faseTexto").innerHTML = "<b>Fase "+fase+":</b> "+nombre
 if(rol){ document.getElementById("rol").value = rol; cargarRol(); }
 document.getElementById("accionesFase2").classList.toggle("hidden", localStorage.getItem("companeroCargado")!=="true");
 mostrarPanelOmar();
+mostrarTrabajoCompanero(null);
 actualizarStepper();
 }
 
