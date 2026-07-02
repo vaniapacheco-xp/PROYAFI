@@ -160,6 +160,13 @@ small.ayuda{display:block;color:#64748b;margin-top:4px;}
 <button onclick="exportar()">Descargar JSON final</button>
 </div>
 
+<!-- DIAGNÓSTICO -->
+<div class="card" style="border:2px dashed #94a3b8;">
+<h3>🔧 Diagnóstico (para resolver dudas de avance)</h3>
+<p>Si no puedes avanzar de fase, toma captura de esto y envíasela a tu profesor(a):</p>
+<div id="diagnostico" style="font-family:monospace;font-size:13px;background:#f1f5f9;padding:10px;border-radius:8px;"></div>
+</div>
+
 <!-- MODO DOCENTE -->
 <div class="card">
 <h3>Modo docente</h3>
@@ -489,8 +496,30 @@ document.getElementById("reporteDocente").innerHTML = html;
 reader.readAsText(file);
 }
 
+function pintarDiagnostico(){
+let el = document.getElementById("diagnostico");
+if(!el) return;
+let rol = localStorage.getItem("rol")||"(ninguno seleccionado)";
+let fase = localStorage.getItem("faseActual")||"1";
+let descargado = localStorage.getItem("descargado")==="true" ? "SÍ" : "NO";
+let companero = localStorage.getItem("companeroCargado")==="true" ? "SÍ" : "NO";
+let aprobado = localStorage.getItem("aprobado")||"(sin definir)";
+let camposOk = rol!=="(ninguno seleccionado)" && ROLES[rol] ? (revisarFase1()?"COMPLETOS":"FALTAN CAMPOS") : "N/A";
+
+el.innerHTML =
+"Versión del código: v2-fix-import<br>"+
+"Rol: "+rol+"<br>"+
+"Fase actual: "+fase+"<br>"+
+"Campos de mi rol: "+camposOk+"<br>"+
+"¿Descargué mi JSON en fase 1?: "+descargado+"<br>"+
+"¿Cargué el JSON del compañero?: "+companero+"<br>"+
+"Decisión de Omar (aprobado): "+aprobado;
+}
+
 // ---------- INICIO ----------
 render();
+pintarDiagnostico();
+setInterval(pintarDiagnostico, 2000);
 </script>
 
 </body>
